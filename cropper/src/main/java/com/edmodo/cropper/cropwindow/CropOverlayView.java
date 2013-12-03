@@ -17,6 +17,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Pair;
@@ -52,9 +53,9 @@ public class CropOverlayView extends View {
     private static final float DEFAULT_CORNER_LENGTH_DP = 20;
 
     // mGuidelines enumerations
-    private static final int GUIDELINES_OFF = 0;
-    private static final int GUIDELINES_ON_TOUCH = 1;
-    private static final int GUIDELINES_ON = 2;
+    public static final int GUIDELINES_OFF = 0;
+    public static final int GUIDELINES_ON_TOUCH = 1;
+    public static final int GUIDELINES_ON = 2;
 
     // Member Variables ////////////////////////////////////////////////////////
 
@@ -113,6 +114,7 @@ public class CropOverlayView extends View {
     private float mCornerExtension;
     private float mCornerOffset;
     private float mCornerLength;
+    private RectF mGivenCropWindow;
 
     // Constructors ////////////////////////////////////////////////////////////
 
@@ -133,7 +135,7 @@ public class CropOverlayView extends View {
 
         // Initialize the crop window here because we need the size of the view
         // to have been determined.
-        initCropWindow(mBitmapRect);
+        initCropWindow(mBitmapRect, mGivenCropWindow);
     }
 
     @Override
@@ -207,7 +209,7 @@ public class CropOverlayView extends View {
      */
     public void setBitmapRect(Rect bitmapRect) {
         mBitmapRect = bitmapRect;
-        initCropWindow(mBitmapRect);
+        initCropWindow(mBitmapRect, mGivenCropWindow);
     }
 
     /**
@@ -216,9 +218,8 @@ public class CropOverlayView extends View {
      * @param bitmap the Bitmap to set
      */
     public void resetCropOverlayView() {
-
         if (initializedCropWindow) {
-            initCropWindow(mBitmapRect);
+            initCropWindow(mBitmapRect, mGivenCropWindow);
             invalidate();
         }
     }
@@ -238,7 +239,7 @@ public class CropOverlayView extends View {
             mGuidelines = guidelines;
 
             if (initializedCropWindow) {
-                initCropWindow(mBitmapRect);
+                initCropWindow(mBitmapRect, mGivenCropWindow);
                 invalidate();
             }
         }
@@ -256,7 +257,7 @@ public class CropOverlayView extends View {
         mFixAspectRatio = fixAspectRatio;
 
         if (initializedCropWindow) {
-            initCropWindow(mBitmapRect);
+            initCropWindow(mBitmapRect, mGivenCropWindow);
             invalidate();
         }
     }
@@ -276,7 +277,7 @@ public class CropOverlayView extends View {
             mTargetAspectRatio = ((float) mAspectRatioX) / mAspectRatioY;
 
             if (initializedCropWindow) {
-                initCropWindow(mBitmapRect);
+                initCropWindow(mBitmapRect, mGivenCropWindow);
                 invalidate();
             }
         }
@@ -297,7 +298,7 @@ public class CropOverlayView extends View {
             mTargetAspectRatio = ((float) mAspectRatioX) / mAspectRatioY;
 
             if (initializedCropWindow) {
-                initCropWindow(mBitmapRect);
+                initCropWindow(mBitmapRect, mGivenCropWindow);
                 invalidate();
             }
         }
@@ -343,6 +344,18 @@ public class CropOverlayView extends View {
 
     }
 
+    /**
+     * Allow setting crop window directly.
+     * @param rect
+     */
+    public void setCropWindow(RectF rect){
+        mGivenCropWindow = rect;
+        if(initializedCropWindow){
+            initCropWindow(mBitmapRect, rect);
+            invalidate();
+        }
+    }
+
     // Private Methods /////////////////////////////////////////////////////////
 
     private void init(Context context) {
@@ -381,12 +394,21 @@ public class CropOverlayView extends View {
      * 
      * @param bitmapRect the bounding box around the image being cropped
      */
-    private void initCropWindow(Rect bitmapRect) {
+    private void initCropWindow(Rect bitmapRect, RectF givenCropWindow) {
 
         // Tells the attribute functions the crop window has already been
         // initialized
         if (initializedCropWindow == false)
             initializedCropWindow = true;
+
+        if(givenCropWindow != null){
+            //simply set it as we have been told.
+            Edge.LEFT.setCoordinate(givenCropWindow.left);
+            Edge.TOP.setCoordinate(givenCropWindow.top);
+            Edge.RIGHT.setCoordinate(givenCropWindow.right);
+            Edge.BOTTOM.setCoordinate(givenCropWindow.bottom);
+            return;
+        }
 
         if (mFixAspectRatio) {
 
